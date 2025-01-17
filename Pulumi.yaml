@@ -1,0 +1,8 @@
+name: pulumi-kubernetes-iac
+description: Deploy Kubernetes addons with Pulumi
+runtime: go
+main: cmd
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: go
