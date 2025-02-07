@@ -1,7 +1,9 @@
 controller:
   replicaCount: 2
   service:
-    type: ClusterIP
+    type: LoadBalancer
+    annotations:
+      ske.sotoon.ir/allocate-ip: external
   resources:
     requests:
       cpu: "300m"

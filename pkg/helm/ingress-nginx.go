@@ -1,7 +1,9 @@
 package helm
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 
 	"pulumi-kubernetes-iac/pkg/merge"
 
@@ -11,7 +13,12 @@ import (
 
 func IngressNginx(ctx *pulumi.Context) error {
 	env := os.Getenv("PULUMI_ENV")
-	valuesFile, err := merge.MergeValues("/home/hmahdiany/Documents/github/hmahdiany/pulumi-kubernetes-iac/charts/ingress-nginx/values.yaml", "/home/hmahdiany/Documents/github/hmahdiany/pulumi-kubernetes-iac/charts/ingress-nginx/overrides/"+env+".yaml")
+
+	// Build the full paths dynamically
+	baseFile := filepath.Join(chartsDirectory, "ingress-nginx", "values.yaml")
+	overridesFile := filepath.Join(chartsDirectory, "ingress-nginx", "overrides", fmt.Sprintf("%s.yaml", env))
+
+	valuesFile, err := merge.MergeValues(baseFile, overridesFile)
 	if err != nil {
 		return err
 	}
@@ -19,9 +26,13 @@ func IngressNginx(ctx *pulumi.Context) error {
 	_, err = helm.NewRelease(ctx, "ingress-nginx", &helm.ReleaseArgs{
 		Name:      pulumi.String("ingress-nginx"),
 		Namespace: pulumi.String("ingress-nginx"),
-		Chart:     pulumi.String("https://kubernetes.github.io/ingress-nginx"),
-		Version:   pulumi.String("3.15.2"),
+		CreateNamespace: pulumi.BoolPtr(true),
+		Chart:     pulumi.String("ingress-nginx"),
+		Version:   pulumi.String("4.12.0"),
 		Values:    pulumi.ToMap(valuesFile),
+		RepositoryOpts: &helm.RepositoryOptsArgs{
+			Repo: pulumi.String("https://kubernetes.github.io/ingress-nginx"),
+		},
 	})
 	return err
 }

@@ -7,7 +7,7 @@ import (
 )
 
 // MergeValues merges a base values.yaml file with an override file
-func MergeValues(baseFile string, overrideFile string) (map[string]interface{}, error) {
+func MergeValues(baseFile, overrideFile string) (map[string]interface{}, error) {
 	// Read base values file
 	baseContent, err := os.ReadFile(baseFile)
 	if err != nil {
@@ -30,28 +30,28 @@ func MergeValues(baseFile string, overrideFile string) (map[string]interface{}, 
 		return nil, err
 	}
 
-	// Merge override into base
-	for k, v := range overrideMap {
-		baseMap[k] = v
-	}
-
-	return MergeMaps(baseMap, overrideMap), nil
+	merged := MergeMaps(baseMap, overrideMap) // Modify baseMap directly
+	return merged, nil
 }
 
 // Merge two maps recursively (overriding base values with override values)
 func MergeMaps(base, override map[string]interface{}) map[string]interface{} {
-	for key, value := range override {
-		if baseValue, ok := base[key]; ok {
-			// Merge nested maps recursively
+	merged := make(map[string]interface{}) // Create a NEW map
+
+	for k, v := range base { // Copy base values first
+		merged[k] = v
+	}
+
+	for k, v := range override {
+		if baseValue, ok := merged[k]; ok { // Check in the *merged* map
 			baseMap, okBase := baseValue.(map[string]interface{})
-			overrideMap, okOverride := value.(map[string]interface{})
+			overrideMap, okOverride := v.(map[string]interface{})
 			if okBase && okOverride {
-				base[key] = MergeMaps(baseMap, overrideMap)
-				continue
+				merged[k] = MergeMaps(baseMap, overrideMap) // Recursive merge
+				continue                                    // Important: Skip the direct assignment below
 			}
 		}
-		// Override base value with override value
-		base[key] = value
+		merged[k] = v // Override or add new value
 	}
-	return base
+	return merged
 }
